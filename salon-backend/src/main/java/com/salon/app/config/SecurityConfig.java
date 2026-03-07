@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/services/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/staff/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/subscriptions/plans").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
