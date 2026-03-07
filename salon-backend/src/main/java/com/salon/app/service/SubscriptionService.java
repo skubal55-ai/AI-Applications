@@ -33,9 +33,9 @@ public class SubscriptionService {
     private static final Map<SubscriptionPlan, String> PLAN_FEATURES = new HashMap<>();
 
     static {
-        PLAN_PRICES.put(SubscriptionPlan.BASIC, new BigDecimal("9.99"));
-        PLAN_PRICES.put(SubscriptionPlan.PREMIUM, new BigDecimal("19.99"));
-        PLAN_PRICES.put(SubscriptionPlan.VIP, new BigDecimal("29.99"));
+        PLAN_PRICES.put(SubscriptionPlan.BASIC, new BigDecimal("1.20"));
+        PLAN_PRICES.put(SubscriptionPlan.PREMIUM, new BigDecimal("3.59"));
+        PLAN_PRICES.put(SubscriptionPlan.VIP, new BigDecimal("5.99"));
 
         PLAN_FEATURES.put(SubscriptionPlan.BASIC, "Basic booking, View services, Email reminders");
         PLAN_FEATURES.put(SubscriptionPlan.PREMIUM, "Priority booking, 10% discount on services, Loyalty points, SMS reminders");

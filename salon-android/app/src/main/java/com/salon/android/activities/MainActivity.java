@@ -1,5 +1,6 @@
 package com.salon.android.activities;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -22,6 +23,7 @@ import com.salon.android.adapters.ServiceAdapter;
 import com.salon.android.api.ApiClient;
 import com.salon.android.api.ApiService;
 import com.salon.android.models.ApiResponse;
+import com.salon.android.utils.LocaleHelper;
 import com.salon.android.utils.SessionManager;
 
 import java.lang.reflect.Type;
@@ -42,6 +44,11 @@ public class MainActivity extends AppCompatActivity implements ServiceAdapter.On
     private ServiceAdapter serviceAdapter;
     private SessionManager sessionManager;
     private List<Map<String, Object>> serviceList = new ArrayList<>();
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(LocaleHelper.applyLanguage(newBase));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,11 +150,43 @@ public class MainActivity extends AppCompatActivity implements ServiceAdapter.On
         } else if (id == R.id.action_subscription) {
             startActivity(new Intent(this, SubscriptionActivity.class));
             return true;
+        } else if (id == R.id.action_language) {
+            showLanguageDialog();
+            return true;
         } else if (id == R.id.action_logout) {
             showLogoutDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showLanguageDialog() {
+        String[] langCodes = {"en", "hi", "es", "fr", "ja", "zh", "ar", "pt", "de", "ko"};
+        String[] langNames = {
+            "English", "Hindi - \u0939\u093F\u0928\u094D\u0926\u0940", "Spanish - Espa\u00F1ol",
+            "French - Fran\u00E7ais", "Japanese - \u65E5\u672C\u8A9E", "Chinese - \u4E2D\u6587",
+            "Arabic - \u0627\u0644\u0639\u0631\u0628\u064A\u0629", "Portuguese - Portugu\u00EAs",
+            "German - Deutsch", "Korean - \uD55C\uAD6D\uC5B4"
+        };
+
+        String currentLang = sessionManager.getLanguage();
+        int checkedItem = 0;
+        for (int i = 0; i < langCodes.length; i++) {
+            if (langCodes[i].equals(currentLang)) {
+                checkedItem = i;
+                break;
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Select Language")
+                .setSingleChoiceItems(langNames, checkedItem, (dialog, which) -> {
+                    LocaleHelper.setLanguage(this, langCodes[which]);
+                    dialog.dismiss();
+                    recreate();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void showLogoutDialog() {

@@ -19,6 +19,7 @@ public class SessionManager {
     private static final String KEY_CURRENCY_CODE = "currency_code";
     private static final String KEY_CURRENCY_SYMBOL = "currency_symbol";
     private static final String KEY_IS_LOGGED_IN = "is_logged_in";
+    private static final String KEY_LANGUAGE = "language";
 
     private final SharedPreferences prefs;
     private final SharedPreferences.Editor editor;
@@ -61,6 +62,13 @@ public class SessionManager {
     public String getCountryCode() { return prefs.getString(KEY_COUNTRY_CODE, "US"); }
     public String getCurrencyCode() { return prefs.getString(KEY_CURRENCY_CODE, "USD"); }
     public String getCurrencySymbol() { return prefs.getString(KEY_CURRENCY_SYMBOL, "$"); }
+
+    public void saveLanguage(String languageCode) {
+        editor.putString(KEY_LANGUAGE, languageCode);
+        editor.apply();
+    }
+
+    public String getLanguage() { return prefs.getString(KEY_LANGUAGE, "en"); }
 
     public void logout() {
         editor.clear();
