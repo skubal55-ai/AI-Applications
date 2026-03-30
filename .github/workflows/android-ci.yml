@@ -1,0 +1,66 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main, master, develop, "devin/**", "cursor/**" ]
+    paths:
+      - 'salon-android/**'
+      - '.github/workflows/android-ci.yml'
+  pull_request:
+    branches: [ main, master, develop ]
+    paths:
+      - 'salon-android/**'
+
+jobs:
+  build:
+    name: Build & Lint Android App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Grant Gradle wrapper execution permission
+        working-directory: salon-android
+        run: chmod +x gradlew
+
+      - name: Run Android lint
+        working-directory: salon-android
+        run: ./gradlew lint --no-daemon
+
+      - name: Build debug APK
+        working-directory: salon-android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Run unit tests
+        working-directory: salon-android
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-lint-report
+          path: salon-android/app/build/reports/lint-results-debug.html
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: salon-app-debug-apk
+          path: salon-android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
