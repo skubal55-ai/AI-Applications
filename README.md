@@ -139,6 +139,137 @@ Prices auto-convert to user's local currency. Example: In India, BASIC = ₹834.
 | Android | Java, Retrofit2, Material Components, Glide |
 | Geolocation | ip-api.com (free tier) |
 
+---
+
+## GenAI CI/CD Integration
+
+This project ships a complete **Generative AI–powered CI/CD pipeline** built on
+[GitHub Actions](https://docs.github.com/en/actions).  Every pipeline component
+is in `.github/` and requires only a single secret (`OPENAI_API_KEY`) to unlock
+the AI-driven stages.
+
+### Pipeline Overview
+
+```
+Pull Request opened / updated
+        │
+        ├─► Backend CI          – Maven build + JUnit tests
+        ├─► Android CI          – Gradle lint + debug APK + unit tests
+        ├─► GenAI PR Review     – GPT-4o code review posted as PR comment
+        ├─► GenAI Test Suggest  – GPT-4o generates missing test stubs
+        └─► GenAI Security Scan – GPT-4o OWASP-aligned vulnerability scan
+
+git tag v*.*.*
+        └─► GenAI Release Notes – GPT-4o drafts categorised release notes
+
+Weekly schedule (Mon 02:00 UTC)
+        └─► GenAI Security Scan (full codebase)
+```
+
+### Workflows
+
+| File | Trigger | Purpose |
+|------|---------|---------|
+| `.github/workflows/backend-ci.yml` | push / PR to `salon-backend/**` | Maven build, unit tests, JAR artifact |
+| `.github/workflows/android-ci.yml` | push / PR to `salon-android/**` | Gradle lint, unit tests, debug APK artifact |
+| `.github/workflows/genai-pr-review.yml` | every PR (open/sync) | AI code review comment on the PR |
+| `.github/workflows/genai-test-suggestions.yml` | PR touching `src/main/**` | AI-generated JUnit / Android test stubs |
+| `.github/workflows/genai-security-scan.yml` | push, PR, weekly cron | OWASP-category security findings; fails build on CRITICAL |
+| `.github/workflows/genai-release-notes.yml` | git tag `v*.*.*` or manual | AI-authored, categorised release notes + GitHub Draft Release |
+
+### AI Scripts
+
+All GenAI logic lives in `.github/scripts/` (Python 3.11, dependencies in
+`.github/scripts/requirements.txt`):
+
+| Script | What the AI does |
+|--------|-----------------|
+| `genai_pr_review.py` | Fetches the PR diff → GPT-4o → structured review (CRITICAL / WARNING / SUGGESTION / INFO) posted as PR comment |
+| `genai_test_suggestions.py` | Reads changed production Java files → GPT-4o → ready-to-paste JUnit 5 + Mockito / Android JUnit test stubs |
+| `genai_security_scan.py` | Reads source files → GPT-4o → OWASP-aligned findings with PoC + remediation snippets; exports `critical_count` step output |
+| `genai_release_notes.py` | Collects `git log` since last tag → GPT-4o → human-readable categorised release notes saved to `release-notes.md` |
+
+### Setup
+
+#### 1 — Add the OpenAI secret
+
+In your GitHub repository go to **Settings → Secrets and variables → Actions**
+and add:
+
+| Secret name | Value |
+|-------------|-------|
+| `OPENAI_API_KEY` | Your OpenAI API key (`sk-…`) |
+
+> Without this secret the GenAI jobs exit gracefully (skipped, not failed) so
+> the standard build / test jobs always succeed independently.
+
+#### 2 — (Optional) Enable the review gate
+
+Set a repository variable `ENABLE_GENAI_REVIEW=true` to always run the PR
+review job even when the secret might not be present (the script will skip
+gracefully if the key is missing).
+
+#### 3 — Local development
+
+Run any script locally for testing:
+
+```bash
+cd .github/scripts
+pip install -r requirements.txt
+
+# PR review (replace SHAs with real values)
+OPENAI_API_KEY=sk-… \
+GITHUB_TOKEN=ghp_… \
+REPO_NAME=owner/repo \
+PR_NUMBER=42 \
+BASE_SHA=abc123 \
+HEAD_SHA=def456 \
+python genai_pr_review.py
+
+# Full security scan of the whole repo
+OPENAI_API_KEY=sk-… SCAN_MODE=full python genai_security_scan.py
+```
+
+### How GenAI Enhances Each Stage
+
+#### Code Review (PR stage)
+Traditional CI catches *compilation errors* and *test failures*.  The GenAI
+review layer catches **logic errors, security anti-patterns, and design
+concerns** that static analysis misses — surfaced automatically before a human
+reviewer even looks at the PR.
+
+#### Test Suggestions (PR stage)
+The model reads the actual production code that changed and emits concrete
+test stubs with real assertions, not just empty `@Test` skeletons.  Engineers
+copy, adapt, and commit them — turning coverage gaps into tracked tasks inside
+the same PR cycle.
+
+#### Security Scanning (every push + weekly)
+Each changed file is audited against the OWASP Top 10 in the context of a
+Spring Boot + Android application.  Every finding includes a one-sentence
+attack scenario and a remediation code snippet, making it actionable.  The
+pipeline fails on `CRITICAL` findings so vulnerabilities cannot be merged
+silently.
+
+#### Release Notes (tag push)
+Commit messages are rarely user-friendly.  GPT-4o filters noise (merge
+commits, typo fixes) and groups related changes into polished "What's New /
+Bug Fixes / Security" sections — automatically attached to the GitHub Draft
+Release.
+
+### Security Considerations
+
+- The OpenAI key is stored as a GitHub Actions secret and is never logged.
+- Diff/file content sent to OpenAI is limited in size
+  (`MAX_DIFF_CHARS = 24 000`, `MAX_FILE_CHARS = 8 000`) to stay within
+  context limits and avoid inadvertently sending large blobs.
+- All three GenAI scripts handle missing secrets gracefully (exit 0, write a
+  "skipped" report) so they never block unrelated CI stages.
+- The security scan job holds `security-events: write` permission only; no
+  `contents: write` is granted to PR-triggered jobs.
+
+---
+
 ## License
 
 This project is for educational and commercial use.

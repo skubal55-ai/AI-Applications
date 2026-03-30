@@ -1,0 +1,80 @@
+name: GenAI Release Notes
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      from_tag:
+        description: 'Start tag (e.g. v1.0.0)'
+        required: true
+      to_tag:
+        description: 'End tag / ref (e.g. v1.1.0 or HEAD)'
+        required: true
+        default: 'HEAD'
+
+permissions:
+  contents: write
+
+jobs:
+  generate-release-notes:
+    name: AI Release Notes Generation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install openai==1.30.1 requests==2.31.0
+
+      - name: Determine tag range
+        id: tags
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+            PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${CURRENT_TAG}$" | head -n1)
+            echo "from_tag=${PREV_TAG:-$(git rev-list --max-parents=0 HEAD)}" >> $GITHUB_OUTPUT
+            echo "to_tag=${CURRENT_TAG}" >> $GITHUB_OUTPUT
+          else
+            echo "from_tag=${{ github.event.inputs.from_tag }}" >> $GITHUB_OUTPUT
+            echo "to_tag=${{ github.event.inputs.to_tag }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate AI release notes
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_NAME: ${{ github.repository }}
+          FROM_TAG: ${{ steps.tags.outputs.from_tag }}
+          TO_TAG: ${{ steps.tags.outputs.to_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python .github/scripts/genai_release_notes.py
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+          retention-days: 90
+
+      - name: Create/update GitHub Release with AI notes
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "Release ${{ github.ref_name }}" \
+            --notes-file release-notes.md \
+            --draft \
+            2>/dev/null || \
+          gh release edit "${{ github.ref_name }}" \
+            --notes-file release-notes.md
