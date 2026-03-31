@@ -25,6 +25,10 @@ local.properties
 # Log files
 *.log
 
+# Python cache files
+__pycache__/
+*.pyc
+
 # Package files
 *.jar
 *.war
