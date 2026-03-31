@@ -1,0 +1,81 @@
+<div class="appointments-page">
+  <div class="page-header">
+    <h1>My Appointments</h1>
+    <button class="btn-primary" routerLink="/book">Book New Appointment</button>
+  </div>
+
+  <div class="status-filters">
+    <button
+      *ngFor="let filter of filters"
+      [ngClass]="{ active: activeFilter === filter.value }"
+      (click)="setFilter(filter.value)"
+    >
+      {{ filter.label }}
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <app-spinner></app-spinner>
+  </div>
+
+  <div *ngIf="errorMessage && !isLoading" class="error-state">
+    <p>{{ errorMessage }}</p>
+    <button (click)="loadAppointments()">Retry</button>
+  </div>
+
+  <div *ngIf="!isLoading && !errorMessage">
+    <div *ngIf="filteredAppointments.length === 0" class="empty-state">
+      <p *ngIf="activeFilter === 'ALL'">You have no appointments yet.</p>
+      <p *ngIf="activeFilter !== 'ALL'">No {{ activeFilter | lowercase }} appointments.</p>
+      <button class="btn-primary" routerLink="/book">Book Now</button>
+    </div>
+
+    <div class="appointments-list">
+      <div
+        *ngFor="let appointment of filteredAppointments; trackBy: trackById"
+        class="appointment-card"
+      >
+        <div class="appointment-header">
+          <div class="appointment-service">
+            <h3>{{ appointment.serviceName }}</h3>
+            <span [ngClass]="getStatusClass(appointment.status)" class="status-badge">
+              {{ appointment.status }}
+            </span>
+          </div>
+          <div class="appointment-price">
+            {{ appointment.totalPrice | currency:appointment.currency }}
+          </div>
+        </div>
+
+        <div class="appointment-details">
+          <div class="detail-item">
+            <span class="label">Date:</span>
+            <span>{{ formatDate(appointment.appointmentDate) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Time:</span>
+            <span>{{ appointment.startTime }} - {{ appointment.endTime }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Staff:</span>
+            <span>{{ appointment.staffName }}</span>
+          </div>
+          <div *ngIf="appointment.notes" class="detail-item">
+            <span class="label">Notes:</span>
+            <span>{{ appointment.notes }}</span>
+          </div>
+        </div>
+
+        <div class="appointment-actions">
+          <button
+            *ngIf="appointment.status === 'PENDING' || appointment.status === 'CONFIRMED'"
+            class="btn-danger"
+            (click)="cancelAppointment(appointment.id)"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
