@@ -1,0 +1,111 @@
+<div class="booking-page">
+  <div class="page-header">
+    <h1>Book an Appointment</h1>
+    <p>Choose your service, staff, and preferred time</p>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <app-spinner></app-spinner>
+  </div>
+
+  <div *ngIf="successMessage" class="success-alert">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="error-alert">
+    {{ errorMessage }}
+  </div>
+
+  <form *ngIf="!isLoading" [formGroup]="bookingForm" (ngSubmit)="onSubmit()">
+    <div class="form-section">
+      <h3>Select Service</h3>
+      <div class="form-group">
+        <label for="serviceId">Service</label>
+        <select id="serviceId" formControlName="serviceId">
+          <option value="">Choose a service</option>
+          <option *ngFor="let service of services" [value]="service.id">
+            {{ service.name }} - {{ service.duration }} min
+          </option>
+        </select>
+        <div *ngIf="bookingForm.get('serviceId')?.invalid && bookingForm.get('serviceId')?.touched" class="field-error">
+          Please select a service
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Select Staff</h3>
+      <div class="staff-grid">
+        <div
+          *ngFor="let staff of staffList"
+          class="staff-card"
+          [ngClass]="{ selected: bookingForm.get('staffId')?.value === staff.id }"
+          (click)="bookingForm.patchValue({ staffId: staff.id })"
+        >
+          <img [src]="staff.imageUrl" [alt]="staff.firstName + ' ' + staff.lastName" />
+          <div class="staff-info">
+            <h4>{{ staff.firstName }} {{ staff.lastName }}</h4>
+            <span>{{ staff.specialization }}</span>
+            <div class="rating">★ {{ staff.rating | number:'1.1-1' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Choose Date & Time</h3>
+      <div class="form-group">
+        <label for="appointmentDate">Date</label>
+        <input
+          id="appointmentDate"
+          type="date"
+          formControlName="appointmentDate"
+          [min]="today"
+        />
+      </div>
+
+      <div class="form-group" *ngIf="availableSlots.length > 0">
+        <label>Available Time Slots</label>
+        <div class="time-slots">
+          <button
+            *ngFor="let slot of availableSlots"
+            type="button"
+            class="time-slot"
+            [ngClass]="{ selected: bookingForm.get('startTime')?.value === slot }"
+            (click)="bookingForm.patchValue({ startTime: slot })"
+          >
+            {{ slot }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="bookingForm.get('staffId')?.value && bookingForm.get('appointmentDate')?.value && availableSlots.length === 0" class="no-slots">
+        No available slots for selected date. Please choose another date.
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-group">
+        <label for="notes">Additional Notes (optional)</label>
+        <textarea
+          id="notes"
+          formControlName="notes"
+          placeholder="Any special requests or allergies..."
+          rows="3"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" routerLink="/services">Cancel</button>
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="bookingForm.invalid || isSubmitting"
+      >
+        <span *ngIf="isSubmitting" class="spinner"></span>
+        {{ isSubmitting ? 'Booking...' : 'Confirm Booking' }}
+      </button>
+    </div>
+  </form>
+</div>

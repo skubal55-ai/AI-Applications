@@ -1,0 +1,66 @@
+<div class="services-page">
+  <div class="page-header">
+    <h1>Our Services</h1>
+    <p>Discover our range of professional beauty and wellness services</p>
+  </div>
+
+  <div class="filters">
+    <div class="search-bar">
+      <input
+        type="text"
+        placeholder="Search services..."
+        [value]="searchQuery"
+        (input)="onSearch($event.target.value)"
+      />
+    </div>
+    <div class="category-filters">
+      <button
+        *ngFor="let category of categories"
+        [ngClass]="{ active: selectedCategory === category }"
+        (click)="filterByCategory(category)"
+      >
+        {{ category }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <app-spinner></app-spinner>
+    <p>Loading services...</p>
+  </div>
+
+  <div *ngIf="errorMessage && !isLoading" class="error-state">
+    <p>{{ errorMessage }}</p>
+    <button (click)="loadServices()">Try Again</button>
+  </div>
+
+  <div *ngIf="!isLoading && !errorMessage" class="services-grid">
+    <div
+      *ngFor="let service of filteredServices; trackBy: trackById"
+      class="service-card"
+    >
+      <img [src]="service.imageUrl" [alt]="service.name" />
+      <div class="service-info">
+        <span class="category-badge">{{ service.category }}</span>
+        <h3>{{ service.name }}</h3>
+        <p>{{ service.description }}</p>
+        <div class="service-meta">
+          <span class="duration">{{ service.duration }} min</span>
+          <span class="price">{{ formatPrice(service.price, service.currency) }}</span>
+        </div>
+        <button
+          class="btn-book"
+          (click)="bookService(service.id)"
+          [disabled]="!service.isActive"
+        >
+          {{ service.isActive ? 'Book Now' : 'Unavailable' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="filteredServices.length === 0" class="empty-state">
+      <p>No services found matching your criteria.</p>
+      <button (click)="filterByCategory('ALL')">Show All Services</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<div class="home-page">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1 *ngIf="currentUser; else guestHero">
+        Welcome back, {{ currentUser.firstName }}!
+      </h1>
+      <ng-template #guestHero>
+        <h1>Your Beauty, Our Passion</h1>
+      </ng-template>
+      <p>Experience luxury beauty treatments by our expert stylists</p>
+      <div class="hero-actions">
+        <button class="btn-primary" routerLink="/book">Book an Appointment</button>
+        <button class="btn-secondary" routerLink="/services">View Services</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Services -->
+  <section class="featured-services">
+    <h2>Our Services</h2>
+    <div *ngIf="isLoading" class="loading-state">
+      <app-spinner></app-spinner>
+    </div>
+    <div *ngIf="!isLoading" class="services-preview">
+      <div *ngFor="let service of featuredServices" class="service-preview-card">
+        <img [src]="service.imageUrl" [alt]="service.name" />
+        <h3>{{ service.name }}</h3>
+        <p>{{ service.description | slice:0:80 }}...</p>
+        <span class="price">From {{ service.price | currency:service.currency }}</span>
+        <button (click)="" routerLink="/services">Learn More</button>
+      </div>
+    </div>
+    <a routerLink="/services" class="view-all-link">View All Services →</a>
+  </section>
+
+  <!-- Top Staff -->
+  <section class="team-section">
+    <h2>Meet Our Team</h2>
+    <div class="team-grid">
+      <div *ngFor="let member of topStaff" class="team-card">
+        <img [src]="member.imageUrl" [alt]="member.firstName + ' ' + member.lastName" />
+        <h4>{{ member.firstName }} {{ member.lastName }}</h4>
+        <p>{{ member.specialization }}</p>
+        <div class="stars">
+          <span *ngFor="let star of getStarArray(member.rating)">★</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="testimonials">
+    <h2>What Our Clients Say</h2>
+    <div class="testimonials-grid">
+      <div *ngFor="let t of testimonials" class="testimonial-card">
+        <div class="stars">
+          <span *ngFor="let star of getStarArray(t.rating)">★</span>
+        </div>
+        <p>"{{ t.comment }}"</p>
+        <strong>- {{ t.name }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <h2>Ready for a New Look?</h2>
+    <p>Book your appointment today and let our experts take care of you.</p>
+    <button class="btn-primary" routerLink="/book">Book Now</button>
+  </section>
+</div>
